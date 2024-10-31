@@ -159,7 +159,8 @@ def main():
                     finger_gesture_history).most_common()
 
                 # Drawing part
-                debug_image = draw_bounding_rect(use_brect, debug_image, brect)
+                #Removed black outer Rectangle for better vision
+                #debug_image = draw_bounding_rect(use_brect, debug_image, brect)
                 debug_image = draw_landmarks(debug_image, landmark_list)
                 debug_image = draw_info_text(
                     debug_image,
@@ -486,13 +487,13 @@ def draw_landmarks(image, landmark_point):
     return image
 
 
-def draw_bounding_rect(use_brect, image, brect):
-    if use_brect:
-        # Outer rectangle
-        cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[3]),
-                     (0, 0, 0), 1)
+#def draw_bounding_rect(use_brect, image, brect):
+    #if use_brect:
+        ## Outer rectangle
+        #cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[3]),
+                     #(0, 0, 0), 1)
 
-    return image
+    #return image
 
 
 def draw_info_text(image, brect, handedness, hand_sign_text,
