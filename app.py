@@ -41,7 +41,7 @@ def main():
     # Argument parsing #################################################################
     args = get_args()
 
-    # Vars
+    # Vars ############################################################################
     annotations = [[]]
     annotationNumber = -1
     annotationStart = False
@@ -148,7 +148,7 @@ def main():
 
                 # Hand sign classification
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
-                if hand_sign_id == 4:  # Draw gesture
+                if hand_sign_id == 2:  # Draw gesture
                     point_history.append(landmark_list[8])
 
 
