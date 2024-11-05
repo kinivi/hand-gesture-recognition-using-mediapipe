@@ -15,7 +15,6 @@ from utils import CvFpsCalc
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
 
-
 def get_args():
     parser = argparse.ArgumentParser()
 
@@ -41,6 +40,14 @@ def get_args():
 def main():
     # Argument parsing #################################################################
     args = get_args()
+
+    # Vars
+    annotations = [[]]
+    annotationNumber = -1
+    annotationStart = False
+    lastDel = False
+
+
 
     cap_device = args.device
     cap_width = args.width
@@ -141,8 +148,23 @@ def main():
 
                 # Hand sign classification
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
-                if hand_sign_id == 4:  # Point gesture
+                if hand_sign_id == 4:  # Draw gesture
                     point_history.append(landmark_list[8])
+
+
+                    if annotationStart is False:
+                        annotationNumber += 1
+                    if lastDel is True:
+                        annotationNumber += 1 
+                        annotations.append([])
+
+                        lastDel = False
+                    annotations.append([])
+                    annotationStart = True
+                    cv.circle(image,landmark_list[8],5, (0, 251, 0), -1)
+                    annotations[annotationNumber].append(landmark_list[8])
+ 
+
                 else:
                     point_history.append([0, 0])
 
