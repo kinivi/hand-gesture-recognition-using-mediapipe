@@ -148,24 +148,21 @@ def main():
                 # Hand sign classification
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
                 if hand_sign_id == 1:  # Draw gesture
-                    point_history.append(landmark_list[8])
-                    print("Point coordinates:", landmark_list[8])  # Print to check
-                    annotationStart = True
-                    cv.circle(debug_image,landmark_list[8],5, (0, 251, 0), -1)
-                    annotations[annotationNumber].append(tuple(landmark_list[8]))
+                    #point_history.append(landmark_list[8])
  
-
-
                     if annotationStart is False:
                         annotationNumber += 1
-                    if lastDel is True:
-                        annotationNumber += 1 
                         annotations.append([])
-
-                        lastDel = False
+                        annotationStart = True
+                        if lastDel is True:
+                            annotationNumber += 1 
+                            annotations.append([])
+                            lastDel = False
+                    annotations[annotationNumber].append(tuple(landmark_list[8]))
 
                 else:
                     point_history.append([0, 0])
+                    annotationStart = False
 
 
 
