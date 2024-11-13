@@ -47,8 +47,6 @@ def main():
     annotationStart = False
     lastDel = False
 
-
-
     cap_device = args.device
     cap_width = args.width
     cap_height = args.height
@@ -108,10 +106,11 @@ def main():
     while True:
         fps = cvFpsCalc.get()
 
-        # Process Key (ESC: end) #################################################
-        key = cv.waitKey(10)
-        if key == 27:  # ESC
+        ## Process Key (ESC: end) #################################################
+        key = cv.waitKey(5)
+        if key == ord('q'):  # ESC
             break
+
         number, mode = select_mode(key, mode)
 
         # Camera capture #####################################################
@@ -148,8 +147,13 @@ def main():
 
                 # Hand sign classification
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
-                if hand_sign_id == 2:  # Draw gesture
+                if hand_sign_id == 1:  # Draw gesture
                     point_history.append(landmark_list[8])
+                    print("Point coordinates:", landmark_list[8])  # Print to check
+                    annotationStart = True
+                    cv.circle(debug_image,landmark_list[8],5, (0, 251, 0), -1)
+                    annotations[annotationNumber].append(tuple(landmark_list[8]))
+ 
 
 
                     if annotationStart is False:
@@ -159,16 +163,10 @@ def main():
                         annotations.append([])
 
                         lastDel = False
-                    annotations.append([])
-                    annotationStart = True
-                    cv.circle(image,landmark_list[8],5, (0, 251, 0), -1)
-                    annotations[annotationNumber].append(landmark_list[8])
- 
 
                 else:
                     point_history.append([0, 0])
 
-                    print(f"Hand sign ID: {hand_sign_id}")
 
 
                 # Finger gesture classification
@@ -197,16 +195,11 @@ def main():
         else:
             point_history.append([0, 0])
 
-        debug_image = draw_point_history(debug_image, point_history)
+        #debug_image = draw_point_history(debug_image, point_history)
+        debug_image = draw_annotation_history(debug_image, annotations)
         debug_image = draw_info(debug_image, fps, mode, number)
 
-        # Screen reflection #############################################################
         cv.imshow('Hand Gesture Recognition', debug_image)
-
-        # Close app.py when pressing q ##################################################
-        if key == ord('q'):
-            break
-
     cap.release()
     cv.destroyAllWindows()
 
@@ -542,11 +535,28 @@ def draw_info_text(image, brect, handedness, hand_sign_text,
     return image
 
 
+def draw_annotation_history(image, annotations):
+    print(annotations)
+    for annotation in annotations:
+        if len(annotation) < 2:
+            continue
+        for i in range(1, len(annotation)):
+            start_point = annotation[i - 1]
+            end_point = annotation[i]
+            start_point = (int(start_point[0]), int(start_point[1]))
+            end_point = (int(end_point[0]), int(end_point[1]))
+
+            if start_point and end_point:
+                cv.line(image, tuple(start_point), tuple(end_point), (0, 255, 0), 2)
+    return image
+
+
+
 def draw_point_history(image, point_history):
     for index, point in enumerate(point_history):
         if point[0] != 0 and point[1] != 0:
             cv.circle(image, (point[0], point[1]), 1 + int(index / 2),
-                      (0, 251, 0), -1)
+                    (0, 251, 0), -1)
 
     return image
 
