@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+
+# Buffer falls wenige Frame gestenänderung, Doch noch zeichnen oder halöt nicht
 import csv
 import copy
 import argparse
@@ -110,6 +113,9 @@ def main():
         key = cv.waitKey(5)
         if key == ord('q'):  # ESC
             break
+
+        if key == ord('d'):
+            print(annotations)
 
         number, mode = select_mode(key, mode)
 
@@ -502,13 +508,13 @@ def draw_landmarks(image, landmark_point):
     return image
 
 
-#def draw_bounding_rect(use_brect, image, brect):
-    #if use_brect:
-        ## Outer rectangle
-        #cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[3]),
-                     #(0, 0, 0), 1)
+def draw_bounding_rect(use_brect, image, brect):
+    if use_brect:
+        # Outer rectangle
+        cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[3]),
+                     (0, 0, 0), 1)
 
-    #return image
+    return image
 
 
 def draw_info_text(image, brect, handedness, hand_sign_text,
@@ -533,7 +539,6 @@ def draw_info_text(image, brect, handedness, hand_sign_text,
 
 
 def draw_annotation_history(image, annotations):
-    print(annotations)
     for annotation in annotations:
         if len(annotation) < 2:
             continue
