@@ -18,6 +18,7 @@ from utils import CvFpsCalc
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
 
+
 def get_args():
     parser = argparse.ArgumentParser()
 
@@ -154,23 +155,34 @@ def main():
                 # Hand sign classification
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
                 if hand_sign_id == 1:  # Draw gesture
-                    #point_history.append(landmark_list[8])
- 
+                    # point_history.append(landmark_list[8])
+
                     if annotationStart is False:
                         annotationNumber += 1
-                        annotations.append([])
-                        annotationStart = True
                         if lastDel is True:
-                            annotationNumber += 1 
+                            annotationNumber += 1
                             annotations.append([])
                             lastDel = False
-                    annotations[annotationNumber].append(tuple(landmark_list[8]))
+                        annotations.append([])
+                        annotationStart = True
+                    annotations[annotationNumber].append(
+                        tuple(landmark_list[8])
+                    )
+
+                elif hand_sign_id == 2 and annotations:
+                    annotations.pop()
+                    annotationNumber -= 1
+                    annotationStart = False
+                    lastDel = True
+
+                elif hand_sign_id == 3:
+                    annotations = [[]]
+                    annotationNumber = -1
+                    annotationStart = False
 
                 else:
                     point_history.append([0, 0])
                     annotationStart = False
-
-
 
                 # Finger gesture classification
                 finger_gesture_id = 0
@@ -185,8 +197,8 @@ def main():
                     finger_gesture_history).most_common()
 
                 # Drawing part
-                #Removed black outer Rectangle for better vision
-                #debug_image = draw_bounding_rect(use_brect, debug_image, brect)
+                # Removed black outer Rectangle for better vision
+                # debug_image = draw_bounding_rect(use_brect, debug_image, brect)
                 debug_image = draw_landmarks(debug_image, landmark_list)
                 debug_image = draw_info_text(
                     debug_image,
@@ -198,13 +210,29 @@ def main():
         else:
             point_history.append([0, 0])
 
-        #debug_image = draw_point_history(debug_image, point_history)
+        # debug_image = draw_point_history(debug_image, point_history)
         debug_image = draw_annotation_history(debug_image, annotations)
         debug_image = draw_info(debug_image, fps, mode, number)
 
         cv.imshow('Hand Gesture Recognition', debug_image)
     cap.release()
     cv.destroyAllWindows()
+
+
+def draw_annotation_history(image, annotations):
+    for annotation in annotations:
+        if len(annotation) < 2:
+            continue
+        for i in range(1, len(annotation)):
+            start_point = annotation[i - 1]
+            end_point = annotation[i]
+            start_point = (int(start_point[0]), int(start_point[1]))
+            end_point = (int(end_point[0]), int(end_point[1]))
+
+            if start_point and end_point:
+                cv.line(image, tuple(start_point),
+                        tuple(end_point), (0, 255, 0), 2)
+    return image
 
 
 def select_mode(key, mode):
@@ -318,6 +346,63 @@ def logging_csv(number, mode, landmark_list, point_history_list):
             writer = csv.writer(f)
             writer.writerow([number, *point_history_list])
     return
+
+
+def draw_bounding_rect(use_brect, image, brect):
+    if use_brect:
+        # Outer rectangle
+        cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[3]),
+                     (0, 0, 0), 1)
+
+    return image
+
+
+def draw_info_text(image, brect, handedness, hand_sign_text,
+                   finger_gesture_text):
+    cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[1] - 22),
+                 (0, 0, 0), -1)
+
+    info_text = handedness.classification[0].label[0:]
+    if hand_sign_text != "":
+        info_text = info_text + ':' + hand_sign_text
+    cv.putText(image, info_text, (brect[0] + 5, brect[1] - 4),
+               cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv.LINE_AA)
+
+    if finger_gesture_text != "":
+        cv.putText(image, "Finger Gesture:" + finger_gesture_text, (10, 60),
+                   cv.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 4, cv.LINE_AA)
+        cv.putText(image, "Finger Gesture:" + finger_gesture_text, (10, 60),
+                   cv.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2,
+                   cv.LINE_AA)
+
+    return image
+
+
+def draw_point_history(image, point_history):
+    for index, point in enumerate(point_history):
+        if point[0] != 0 and point[1] != 0:
+            cv.circle(image, (point[0], point[1]), 1 + int(index / 2),
+                      (0, 251, 0), -1)
+
+    return image
+
+
+def draw_info(image, fps, mode, number):
+    cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
+               1.0, (0, 0, 0), 4, cv.LINE_AA)
+    cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
+               1.0, (255, 255, 255), 2, cv.LINE_AA)
+
+    mode_string = ['Logging Key Point', 'Logging Point History']
+    if 1 <= mode <= 2:
+        cv.putText(image, "MODE:" + mode_string[mode - 1], (10, 90),
+                   cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+                   cv.LINE_AA)
+        if 0 <= number <= 9:
+            cv.putText(image, "NUM:" + str(number), (10, 110),
+                       cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+                       cv.LINE_AA)
+    return image
 
 
 def draw_landmarks(image, landmark_point):
@@ -437,7 +522,7 @@ def draw_landmarks(image, landmark_point):
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 4:  # 親指：指先
-            cv.circle(image, (landmark[0], landmark[1]), 10, (0, 0, 255), # Thumb
+            cv.circle(image, (landmark[0], landmark[1]), 10, (0, 0, 255),  # Thumb
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 10, (0, 0, 0), 1)
         if index == 5:  # 人差指：付け根
@@ -453,7 +538,7 @@ def draw_landmarks(image, landmark_point):
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 8:  # 人差指：指先
-            cv.circle(image, (landmark[0], landmark[1]), 10, (0, 0, 255), # Index
+            cv.circle(image, (landmark[0], landmark[1]), 10, (0, 0, 255),  # Index
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 10, (0, 0, 0), 1)
         if index == 9:  # 中指：付け根
@@ -505,79 +590,6 @@ def draw_landmarks(image, landmark_point):
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 8, (0, 0, 0), 1)
 
-    return image
-
-
-def draw_bounding_rect(use_brect, image, brect):
-    if use_brect:
-        # Outer rectangle
-        cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[3]),
-                     (0, 0, 0), 1)
-
-    return image
-
-
-def draw_info_text(image, brect, handedness, hand_sign_text,
-                   finger_gesture_text):
-    cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[1] - 22),
-                 (0, 0, 0), -1)
-
-    info_text = handedness.classification[0].label[0:]
-    if hand_sign_text != "":
-        info_text = info_text + ':' + hand_sign_text
-    cv.putText(image, info_text, (brect[0] + 5, brect[1] - 4),
-               cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv.LINE_AA)
-
-    if finger_gesture_text != "":
-        cv.putText(image, "Finger Gesture:" + finger_gesture_text, (10, 60),
-                   cv.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 4, cv.LINE_AA)
-        cv.putText(image, "Finger Gesture:" + finger_gesture_text, (10, 60),
-                   cv.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2,
-                   cv.LINE_AA)
-
-    return image
-
-
-def draw_annotation_history(image, annotations):
-    for annotation in annotations:
-        if len(annotation) < 2:
-            continue
-        for i in range(1, len(annotation)):
-            start_point = annotation[i - 1]
-            end_point = annotation[i]
-            start_point = (int(start_point[0]), int(start_point[1]))
-            end_point = (int(end_point[0]), int(end_point[1]))
-
-            if start_point and end_point:
-                cv.line(image, tuple(start_point), tuple(end_point), (0, 255, 0), 2)
-    return image
-
-
-
-def draw_point_history(image, point_history):
-    for index, point in enumerate(point_history):
-        if point[0] != 0 and point[1] != 0:
-            cv.circle(image, (point[0], point[1]), 1 + int(index / 2),
-                    (0, 251, 0), -1)
-
-    return image
-
-
-def draw_info(image, fps, mode, number):
-    cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
-               1.0, (0, 0, 0), 4, cv.LINE_AA)
-    cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
-               1.0, (255, 255, 255), 2, cv.LINE_AA)
-
-    mode_string = ['Logging Key Point', 'Logging Point History']
-    if 1 <= mode <= 2:
-        cv.putText(image, "MODE:" + mode_string[mode - 1], (10, 90),
-                   cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
-                   cv.LINE_AA)
-        if 0 <= number <= 9:
-            cv.putText(image, "NUM:" + str(number), (10, 110),
-                       cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
-                       cv.LINE_AA)
     return image
 
 
