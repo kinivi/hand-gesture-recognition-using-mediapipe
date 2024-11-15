@@ -51,6 +51,9 @@ def main():
     annotationStart = False
     lastDel = False
 
+    frame_counter = 0
+    frame_skip = 10
+
     cap_device = args.device
     cap_width = args.width
     cap_height = args.height
@@ -109,6 +112,8 @@ def main():
 
     while True:
         fps = cvFpsCalc.get()
+
+        frame_counter += 1
 
         ## Process Key (ESC: end) #################################################
         key = cv.waitKey(5)
@@ -169,13 +174,13 @@ def main():
                         tuple(landmark_list[8])
                     )
 
-                elif hand_sign_id == 2 and annotations:
+                elif hand_sign_id == 2 and annotations and frame_counter % frame_skip == 0:
                     annotations.pop()
                     annotationNumber -= 1
                     annotationStart = False
                     lastDel = True
 
-                elif hand_sign_id == 3:
+                elif hand_sign_id == 3 and frame_counter % frame_skip == 0:
                     annotations = [[]]
                     annotationNumber = -1
                     annotationStart = False
