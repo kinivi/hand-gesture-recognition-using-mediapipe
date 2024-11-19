@@ -54,6 +54,8 @@ def main():
     frame_counter = 0
     frame_skip = 10
 
+    buffer_counter = 10
+
     cap_device = args.device
     cap_width = args.width
     cap_height = args.height
@@ -159,9 +161,20 @@ def main():
 
                 # Hand sign classification
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
-                if hand_sign_id == 1:  # Draw gesture
-                    # point_history.append(landmark_list[8])
+                if hand_sign_id == 0:
+                    buffer_counter += 1
+                    annotationStart = False
 
+                elif hand_sign_id == 1:  # Draw gesture
+                    if buffer_counter >= 0 and buffer_counter <= 10:
+                        buffer_counter = -1
+                        annotations[annotationNumber].append(
+                            tuple(landmark_list[8])
+                        )
+                        annotationStart = True
+                        continue
+                    else:
+                        buffer_counter = -1
                     if annotationStart is False:
                         annotationNumber += 1
                         if lastDel is True:
